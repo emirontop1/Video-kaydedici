@@ -9,7 +9,7 @@ body{
     margin:0;
     padding:20px;
     background:#111;
-    color:white;
+    color:#fff;
     font-family:Arial,sans-serif;
 }
 h1{
@@ -25,11 +25,11 @@ input,button{
 }
 input{
     background:#222;
-    color:white;
+    color:#fff;
 }
 button{
     background:#1e90ff;
-    color:white;
+    color:#fff;
     font-weight:bold;
     cursor:pointer;
 }
@@ -38,6 +38,15 @@ button{
     margin-top:15px;
     padding:15px;
     border-radius:12px;
+}
+.btnRow{
+    display:flex;
+    gap:8px;
+    margin-top:12px;
+}
+.btnRow button{
+    flex:1;
+    margin-top:0;
 }
 #lockScreen{
     position:fixed;
@@ -80,8 +89,8 @@ button{
 <script>
 function getCurrentPassword(){
     const now = new Date();
-    const h = String(now.getHours()).padStart(2,"0");
-    const m = String(now.getMinutes()).padStart(2,"0");
+    const h = String(now.getHours()).padStart(2, "0");
+    const m = String(now.getMinutes()).padStart(2, "0");
     return `${h}.${m}`;
 }
 
@@ -123,22 +132,57 @@ function saveVideo(){
     render();
 }
 
-async function copyVideo(i){
+function copyVideo(i){
     let videos = JSON.parse(localStorage.getItem("videos") || "[]");
     let link = videos[i].link;
 
+    const input = document.createElement("input");
+    input.value = link;
+    document.body.appendChild(input);
+    input.select();
+    input.setSelectionRange(0, 99999);
+
     try{
-        await navigator.clipboard.writeText(link);
-        alert("Link panoya kopyalandı");
-    } catch(e){
-        const temp = document.createElement("textarea");
-        temp.value = link;
-        document.body.appendChild(temp);
-        temp.select();
         document.execCommand("copy");
-        document.body.removeChild(temp);
         alert("Link panoya kopyalandı");
+    }catch(e){
+        alert("Kopyalama desteklenmiyor");
     }
+
+    document.body.removeChild(input);
+}
+
+function editVideo(i){
+    let videos = JSON.parse(localStorage.getItem("videos") || "[]");
+    let v = videos[i];
+
+    const newName = prompt("Yeni video adı:", v.name);
+    if(newName === null) return;
+
+    const newDesc = prompt("Yeni açıklama:", v.description || "");
+    if(newDesc === null) return;
+
+    const newLink = prompt("Yeni link:", v.link);
+    if(newLink === null) return;
+
+    videos[i] = {
+        name: newName.trim(),
+        description: newDesc.trim(),
+        link: newLink.trim()
+    };
+
+    localStorage.setItem("videos", JSON.stringify(videos));
+    render();
+}
+
+function deleteVideo(i){
+    let videos = JSON.parse(localStorage.getItem("videos") || "[]");
+
+    if(!confirm("Bu kaydı silmek istiyor musun?")) return;
+
+    videos.splice(i, 1);
+    localStorage.setItem("videos", JSON.stringify(videos));
+    render();
 }
 
 function render(){
@@ -146,12 +190,17 @@ function render(){
     let list = document.getElementById("list");
     list.innerHTML = "";
 
-    videos.forEach((v,i)=>{
+    videos.forEach((v, i) => {
         list.innerHTML += `
             <div class="card">
                 <h3>${v.name}</h3>
                 <p>${v.description || "Açıklama yok"}</p>
-                <button onclick="copyVideo(${i})">Kopyala</button>
+
+                <div class="btnRow">
+                    <button onclick="copyVideo(${i})">Kopyala</button>
+                    <button onclick="editVideo(${i})">Düzenle</button>
+                    <button onclick="deleteVideo(${i})">Sil</button>
+                </div>
             </div>
         `;
     });
@@ -161,4 +210,4 @@ document.addEventListener("contextmenu", e => e.preventDefault());
 </script>
 
 </body>
-  </html>
+</html>
