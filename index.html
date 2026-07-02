@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Video Vault</title>
+<style>
+body{
+    margin:0;
+    padding:20px;
+    background:#111;
+    color:white;
+    font-family:Arial,sans-serif;
+}
+h1{
+    text-align:center;
+}
+input,button{
+    width:100%;
+    box-sizing:border-box;
+    padding:12px;
+    margin-top:10px;
+    border:none;
+    border-radius:10px;
+}
+input{
+    background:#222;
+    color:white;
+}
+button{
+    background:#1e90ff;
+    color:white;
+    font-weight:bold;
+    cursor:pointer;
+}
+.card{
+    background:#1b1b1b;
+    margin-top:15px;
+    padding:15px;
+    border-radius:12px;
+}
+#lockScreen{
+    position:fixed;
+    inset:0;
+    background:black;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:9999;
+}
+.lockBox{
+    width:300px;
+    background:#111;
+    padding:20px;
+    border-radius:12px;
+}
+</style>
+</head>
+<body>
+
+<div id="lockScreen">
+    <div class="lockBox">
+        <h2>Kilitli</h2>
+        <input id="passwordInput" placeholder="Saat.Dakika">
+        <button onclick="unlock()">Aç</button>
+    </div>
+</div>
+
+<div id="app" style="display:none;">
+    <h1>Video Vault</h1>
+
+    <input id="name" placeholder="Video adı">
+    <input id="description" placeholder="Açıklama">
+    <input id="link" placeholder="Video linki">
+    <button onclick="saveVideo()">Kaydet</button>
+
+    <div id="list"></div>
+</div>
+
+<script>
+function getCurrentPassword(){
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2,"0");
+    const m = String(now.getMinutes()).padStart(2,"0");
+    return `${h}.${m}`;
+}
+
+function unlock(){
+    const pass = document.getElementById("passwordInput").value;
+    if(pass === getCurrentPassword()){
+        document.getElementById("lockScreen").style.display = "none";
+        document.getElementById("app").style.display = "block";
+        render();
+    } else {
+        alert("Yanlış şifre");
+    }
+}
+
+function saveVideo(){
+    const name = document.getElementById("name").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const link = document.getElementById("link").value.trim();
+
+    if(!name || !link){
+        alert("İsim ve link gerekli");
+        return;
+    }
+
+    let videos = JSON.parse(localStorage.getItem("videos") || "[]");
+
+    videos.push({
+        name,
+        description,
+        link
+    });
+
+    localStorage.setItem("videos", JSON.stringify(videos));
+
+    document.getElementById("name").value = "";
+    document.getElementById("description").value = "";
+    document.getElementById("link").value = "";
+
+    render();
+}
+
+async function copyVideo(i){
+    let videos = JSON.parse(localStorage.getItem("videos") || "[]");
+    let link = videos[i].link;
+
+    try{
+        await navigator.clipboard.writeText(link);
+        alert("Link panoya kopyalandı");
+    } catch(e){
+        const temp = document.createElement("textarea");
+        temp.value = link;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        alert("Link panoya kopyalandı");
+    }
+}
+
+function render(){
+    let videos = JSON.parse(localStorage.getItem("videos") || "[]");
+    let list = document.getElementById("list");
+    list.innerHTML = "";
+
+    videos.forEach((v,i)=>{
+        list.innerHTML += `
+            <div class="card">
+                <h3>${v.name}</h3>
+                <p>${v.description || "Açıklama yok"}</p>
+                <button onclick="copyVideo(${i})">Kopyala</button>
+            </div>
+        `;
+    });
+}
+
+document.addEventListener("contextmenu", e => e.preventDefault());
+</script>
+
+</body>
+  </html>
